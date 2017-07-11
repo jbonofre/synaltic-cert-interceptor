@@ -18,6 +18,17 @@
             <artifactId>cxf-core</artifactId>
             <version>${cxf.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>4.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.compendium</artifactId>
+            <version>4.3.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -29,7 +40,10 @@
                 <inherited>true</inherited>
                 <extensions>true</extensions>
                 <configuration>
-
+                    <instructions>
+                        <Bundle-Activator>com.synaltic.cxf.cert.Activator</Bundle-Activator>
+                        <Import-Package>*</Import-Package>
+                    </instructions>
                 </configuration>
             </plugin>
         </plugins>
