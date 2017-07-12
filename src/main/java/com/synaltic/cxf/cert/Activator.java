@@ -16,7 +16,7 @@ public class Activator implements BundleActivator {
 
             public ServiceRegistration<?> addingService(ServiceReference<Bus> reference) {
                 Bus bus = bundleContext.getService(reference);
-                CertInterceptor certInterceptor = new CertInterceptor();
+                CertInterceptor certInterceptor = new CertInterceptor(bundleContext);
                 bus.getInInterceptors().add(certInterceptor);
                 return null;
             }

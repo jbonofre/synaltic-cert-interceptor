@@ -6,6 +6,10 @@ import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
 import org.apache.cxf.security.transport.TLSSessionInfo;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,12 +22,17 @@ import java.util.*;
 
 public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
 
-    public CertInterceptor() {
-        this(Phase.UNMARSHAL);
+    public static final String CONFIG_PID = "com.synaltic.cxf.cert";
+
+    private BundleContext bundleContext;
+
+    public CertInterceptor(BundleContext bundleContext) {
+        this(Phase.UNMARSHAL, bundleContext);
     }
 
-    public CertInterceptor(String phase) {
+    public CertInterceptor(String phase, BundleContext bundleContext) {
         super(phase);
+        this.bundleContext = bundleContext;
     }
 
     public void handleMessage(Message message) throws Fault {
@@ -43,8 +52,9 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         // validate the certificate
         try {
             Bus bus = message.getExchange().getBus();
+
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(new FileInputStream(new File(System.getProperty("karaf.etc") + File.pathSeparator + bus.getId())), "password".toCharArray());
+            keyStore.load(new FileInputStream(new File(getKeyStorePath(bus.getId()))), getKeyStorePassword(bus.getId()).toCharArray());
 
             if (!validateKeyChain((X509Certificate) certificate, keyStore)) {
                 throw new SecurityException("Certificate is invalid");
@@ -108,6 +118,38 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         } catch (InvalidKeyException invalidKeyException) {
             return false;
         }
+    }
+
+    private String getKeyStorePath(String busId) throws Exception {
+        ServiceReference<ConfigurationAdmin> ref = bundleContext.getServiceReference(ConfigurationAdmin.class);
+        if (ref != null) {
+            try {
+                ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
+                Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
+                if (configuration != null && configuration.getProperties() != null) {
+                    return (String) configuration.getProperties().get(busId + ".keystore.path");
+                }
+            } finally {
+                bundleContext.ungetService(ref);
+            }
+        }
+        return null;
+    }
+
+    private String getKeyStorePassword(String busId) throws Exception {
+        ServiceReference<ConfigurationAdmin> ref = bundleContext.getServiceReference(ConfigurationAdmin.class);
+        if (ref != null) {
+            try {
+                ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
+                Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
+                if (configuration != null && configuration.getProperties() != null) {
+                    return (String) configuration.getProperties().get(busId + ".keystore.password");
+                }
+            } finally {
+                bundleContext.ungetService(ref);
+            }
+        }
+        return null;
     }
 
 }
