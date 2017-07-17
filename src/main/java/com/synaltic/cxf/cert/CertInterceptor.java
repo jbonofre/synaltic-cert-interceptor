@@ -28,15 +28,15 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
 
     public static final String CONFIG_PID = "com.synaltic.cxf.cert";
 
-    private BundleContext bundleContext;
+    private final ConfigurationAdmin configurationAdmin;
 
-    public CertInterceptor(BundleContext bundleContext) {
-        this(Phase.UNMARSHAL, bundleContext);
+    public CertInterceptor(ConfigurationAdmin configurationAdmin) {
+        this(Phase.UNMARSHAL, configurationAdmin);
     }
 
-    public CertInterceptor(String phase, BundleContext bundleContext) {
+    public CertInterceptor(String phase, ConfigurationAdmin configurationAdmin) {
         super(phase);
-        this.bundleContext = bundleContext;
+        this.configurationAdmin = configurationAdmin;
     }
 
     public void handleMessage(Message message) throws Fault {
@@ -87,7 +87,7 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         }
     }
 
-    private boolean validateKeyChain(X509Certificate certificate, KeyStore keyStore) throws Exception {
+    protected boolean validateKeyChain(X509Certificate certificate, KeyStore keyStore) throws Exception {
         LOG.debug("Validating key chain");
         X509Certificate[] certificates = new X509Certificate[keyStore.size()];
         int i = 0;
@@ -98,7 +98,7 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         return validateKeyChain(certificate, certificates);
     }
 
-    private boolean validateKeyChain(X509Certificate certificate, X509Certificate... trustedCertificates) throws Exception {
+    protected boolean validateKeyChain(X509Certificate certificate, X509Certificate... trustedCertificates) throws Exception {
         boolean found = false;
         int i = trustedCertificates.length;
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -132,7 +132,7 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         return found;
     }
 
-    private boolean isSelfSigned(X509Certificate certificate) throws Exception {
+    protected boolean isSelfSigned(X509Certificate certificate) throws Exception {
         try {
             PublicKey key = certificate.getPublicKey();
             certificate.verify(key);
@@ -145,77 +145,55 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         }
     }
 
-    private String getKeyStorePath(String busId) throws Exception {
+    protected String getKeyStorePath(String busId) throws Exception {
         LOG.debug("Get the keystore path for CXF Bus {}", busId);
-        ServiceReference<ConfigurationAdmin> ref = bundleContext.getServiceReference(ConfigurationAdmin.class);
-        if (ref != null) {
-            try {
-                ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
-                Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
-                if (configuration != null && configuration.getProperties() != null) {
-                    Enumeration<String> keys = configuration.getProperties().keys();
-                    while (keys.hasMoreElements()) {
-                        String property = keys.nextElement();
-                        if ((busId + ".keystore.path").matches(property)) {
-                            LOG.debug("Actual keystore path is {}", configuration.getProperties().get(busId + ".keystore.path"));
-                            return (String) configuration.getProperties().get(busId + ".keystore.path");
-                        }
-                    }
+        Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
+        if (configuration != null) {
+            Enumeration<String> keys = configuration.getProperties().keys();
+            while (keys.hasMoreElements()) {
+                String property = keys.nextElement();
+                if ((busId + ".keystore.path").matches(property)) {
+                    LOG.debug("Actual keystore path is {}", configuration.getProperties().get(busId + ".keystore.path"));
+                    return (String) configuration.getProperties().get(property);
                 }
-            } finally {
-                bundleContext.ungetService(ref);
             }
+            LOG.warn("No keystore path found for CXF Bus {}", busId);
         }
-        LOG.warn("No keystore path found for CXF Bus {}", busId);
         return null;
     }
 
-    private String getKeyStorePassword(String busId) throws Exception {
+    protected String getKeyStorePassword(String busId) throws Exception {
         LOG.debug("Get the keystore password for CXF Bus {}", busId);
-        ServiceReference<ConfigurationAdmin> ref = bundleContext.getServiceReference(ConfigurationAdmin.class);
-        if (ref != null) {
-            try {
-                ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
-                Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
-                if (configuration != null && configuration.getProperties() != null) {
-                    Enumeration<String> keys = configuration.getProperties().keys();
-                    while (keys.hasMoreElements()) {
-                        String property = keys.nextElement();
-                        if ((busId + ".keystore.password").matches(property)) {
-                            return (String) configuration.getProperties().get(busId + ".keystore.password");
-                        }
-                    }
+        Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
+        if (configuration != null) {
+            Enumeration<String> keys = configuration.getProperties().keys();
+            while (keys.hasMoreElements()) {
+                String property = keys.nextElement();
+                if ((busId + ".keystore.password").matches(property)) {
+                    LOG.debug("Found keystore password for CXF Bus {}", busId);
+                    return (String) configuration.getProperties().get(property);
                 }
-            } finally {
-                bundleContext.ungetService(ref);
             }
+            LOG.warn("No keystore password found for CXF Bus {}", busId);
         }
-        LOG.warn("No keystore password found for CXF Bus {}", busId);
         return null;
     }
 
-    private boolean isEnabled(String busId) {
-        LOG.debug("Checking if Synaltic Cert Interceptor is enabled for bus {}", busId);
-        ServiceReference<ConfigurationAdmin> ref = bundleContext.getServiceReference(ConfigurationAdmin.class);
-        if (ref != null) {
-            try {
-                ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
-                Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
-                if (configuration != null && configuration.getProperties() != null) {
-                    Enumeration<String> keys = configuration.getProperties().keys();
-                    while (keys.hasMoreElements()) {
-                        String property = keys.nextElement();
-                        if ((busId + ".enabled").matches(property)) {
-                            return Boolean.parseBoolean((String) configuration.getProperties().get(busId + ".enabled"));
-                        }
+    protected boolean isEnabled(String busId) {
+        LOG.debug("Get the keystore path for CXF Bus {}", busId);
+        try {
+            Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
+            if (configuration != null) {
+                Enumeration<String> keys = configuration.getProperties().keys();
+                while (keys.hasMoreElements()) {
+                    String property = keys.nextElement();
+                    if ((busId + ".enabled").matches(property)) {
+                        return Boolean.parseBoolean((String) configuration.getProperties().get(property));
                     }
                 }
-            } catch (Exception e) {
-                LOG.warn("Can't check if CXF Bus is enabled", e);
-                return false;
-            } finally {
-                bundleContext.ungetService(ref);
             }
+        } catch (Exception e) {
+            LOG.warn("Can't check if the CXF Bus {} is enabled", busId, e);
         }
         return false;
     }

@@ -5,6 +5,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,12 @@ public class Activator implements BundleActivator {
             public ServiceRegistration<?> addingService(ServiceReference<Bus> reference) {
                 Bus bus = bundleContext.getService(reference);
                 LOG.debug("Detected new CXF Bus " + bus.getId());
-                CertInterceptor certInterceptor = new CertInterceptor(bundleContext);
+                ConfigurationAdmin configurationAdmin = null;
+                ServiceReference<ConfigurationAdmin> serviceReference = bundleContext.getServiceReference(ConfigurationAdmin.class);
+                if (serviceReference != null) {
+                    configurationAdmin = bundleContext.getService(serviceReference);
+                }
+                CertInterceptor certInterceptor = new CertInterceptor(configurationAdmin);
                 LOG.debug("Injecting interceptor");
                 bus.getInInterceptors().add(certInterceptor);
                 return null;
