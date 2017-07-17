@@ -29,6 +29,12 @@
             <artifactId>org.osgi.compendium</artifactId>
             <version>4.3.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.7</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -42,7 +48,7 @@
                 <configuration>
                     <instructions>
                         <Bundle-Activator>com.synaltic.cxf.cert.Activator</Bundle-Activator>
-                        <Import-Package>*</Import-Package>
+                        <Import-Package>org.slf4j;resolution:=optional,*</Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
