@@ -24,6 +24,7 @@ The interceptor automatically react when a CXF bus appears (thanks to a service 
 It uses an unique configuration file `etc/com.synaltic.cxf.cert.cfg`. This configuration file contains the keystore configuration per CXf bus:
 
 ```
+[bus_id].enabled=true
 [bus_id].keystore.path=/path/to/keystore
 [bus_id].keystore.password=password
 ```

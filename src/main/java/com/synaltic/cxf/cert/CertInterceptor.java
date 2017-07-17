@@ -40,6 +40,11 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
     }
 
     public void handleMessage(Message message) throws Fault {
+        String busId = message.getExchange().getBus().getId();
+        if (!isEnabled(busId)) {
+            LOG.debug("Synaltic Cert Interceptor is disabled for CXF Bus {}", busId);
+            return;
+        }
         LOG.debug("Incoming client message");
         TLSSessionInfo tlsSession = message.get(TLSSessionInfo.class);
         LOG.debug("Get TLS session info");
@@ -61,11 +66,9 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
 
         // validate the certificate
         try {
-            Bus bus = message.getExchange().getBus();
-
             LOG.debug("Loading keystore for the CXF bus");
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(new FileInputStream(new File(getKeyStorePath(bus.getId()))), getKeyStorePassword(bus.getId()).toCharArray());
+            keyStore.load(new FileInputStream(new File(getKeyStorePath(busId))), getKeyStorePassword(busId).toCharArray());
 
             LOG.debug("Validating certificate key chain over the keystore");
             if (!validateKeyChain((X509Certificate) certificate, keyStore)) {
@@ -163,7 +166,6 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
                 ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
                 Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
                 if (configuration != null && configuration.getProperties() != null) {
-                    LOG.debug("Found a keystore password");
                     return (String) configuration.getProperties().get(busId + ".keystore.password");
                 }
             } finally {
@@ -172,6 +174,26 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         }
         LOG.warn("No keystore password found for CXF Bus {}", busId);
         return null;
+    }
+
+    private boolean isEnabled(String busId) {
+        LOG.debug("Checking if Synaltic Cert Interceptor is enabled for bus {}", busId);
+        ServiceReference<ConfigurationAdmin> ref = bundleContext.getServiceReference(ConfigurationAdmin.class);
+        if (ref != null) {
+            try {
+                ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
+                Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
+                if (configuration != null && configuration.getProperties() != null) {
+                    return Boolean.parseBoolean((String) configuration.getProperties().get(busId + ".enabled"));
+                }
+            } catch (Exception e) {
+                LOG.warn("Can't check if CXF Bus is enabled", e);
+                return false;
+            } finally {
+                bundleContext.ungetService(ref);
+            }
+        }
+        return false;
     }
 
 }
