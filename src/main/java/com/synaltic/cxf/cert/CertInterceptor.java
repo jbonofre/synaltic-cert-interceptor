@@ -183,7 +183,7 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
             try {
                 ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
                 Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
-                if (configuration != null && configuration.getProperties() != null) {
+                if (configuration != null && configuration.getProperties() != null && configuration.getProperties().get(busId + ".enabled") != null) {
                     return Boolean.parseBoolean((String) configuration.getProperties().get(busId + ".enabled"));
                 }
             } catch (Exception e) {
