@@ -1,8 +1,8 @@
-SSL Certification Interceptor
+# SSL Certification Interceptor
 
 This CXF interceptor checks client SSL certificate with authorization specific to each CXF bus.
 
-= Installation
+## Installation
 
 You have to install CXF in your Karaf container:
 
@@ -17,7 +17,7 @@ Then you can install the interceptor bundle:
 karaf@root()> bundle:install -s mvn:com.synaltic/cert-interceptor/1.0.0-SNAPSHOT
 ```
 
-= Configuration
+## Configuration
 
 The interceptor automatically react when a CXF bus appears (thanks to a service tracker).
 
@@ -28,7 +28,7 @@ It uses an unique configuration file `etc/com.synaltic.cxf.cert.cfg`. This confi
 [bus_id].keystore.password=password
 ```
 
-= How does it work ?
+## How does it work ?
 
 The interceptor intercepts the incoming client TLS request.
 
