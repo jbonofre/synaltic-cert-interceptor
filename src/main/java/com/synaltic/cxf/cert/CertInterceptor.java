@@ -147,8 +147,14 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
                 ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
                 Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
                 if (configuration != null && configuration.getProperties() != null) {
-                    LOG.debug("Actual keystore path is {}", configuration.getProperties().get(busId + ".keystore.path"));
-                    return (String) configuration.getProperties().get(busId + ".keystore.path");
+                    Enumeration<String> keys = configuration.getProperties().keys();
+                    while (keys.hasMoreElements()) {
+                        String property = keys.nextElement();
+                        if ((busId + ".keystore.path").matches(property)) {
+                            LOG.debug("Actual keystore path is {}", configuration.getProperties().get(busId + ".keystore.path"));
+                            return (String) configuration.getProperties().get(busId + ".keystore.path");
+                        }
+                    }
                 }
             } finally {
                 bundleContext.ungetService(ref);
@@ -166,7 +172,13 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
                 ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
                 Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
                 if (configuration != null && configuration.getProperties() != null) {
-                    return (String) configuration.getProperties().get(busId + ".keystore.password");
+                    Enumeration<String> keys = configuration.getProperties().keys();
+                    while (keys.hasMoreElements()) {
+                        String property = keys.nextElement();
+                        if ((busId + ".keystore.password").matches(property)) {
+                            return (String) configuration.getProperties().get(busId + ".keystore.password");
+                        }
+                    }
                 }
             } finally {
                 bundleContext.ungetService(ref);
@@ -183,8 +195,14 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
             try {
                 ConfigurationAdmin configurationAdmin = bundleContext.getService(ref);
                 Configuration configuration = configurationAdmin.getConfiguration(CONFIG_PID);
-                if (configuration != null && configuration.getProperties() != null && configuration.getProperties().get(busId + ".enabled") != null) {
-                    return Boolean.parseBoolean((String) configuration.getProperties().get(busId + ".enabled"));
+                if (configuration != null && configuration.getProperties() != null) {
+                    Enumeration<String> keys = configuration.getProperties().keys();
+                    while (keys.hasMoreElements()) {
+                        String property = keys.nextElement();
+                        if ((busId + ".enabled").matches(property)) {
+                            return Boolean.parseBoolean((String) configuration.getProperties().get(busId + ".enabled"));
+                        }
+                    }
                 }
             } catch (Exception e) {
                 LOG.warn("Can't check if CXF Bus is enabled", e);
