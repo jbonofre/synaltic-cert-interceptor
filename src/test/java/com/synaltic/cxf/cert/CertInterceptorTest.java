@@ -6,6 +6,11 @@ import org.junit.Test;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
@@ -51,6 +56,18 @@ public class CertInterceptorTest {
         Assert.assertTrue(interceptor.isEnabled("test"));
         Assert.assertEquals("/foo", interceptor.getKeyStorePath("test"));
         Assert.assertEquals("test", interceptor.getKeyStorePassword("test"));
+    }
+
+    @Test
+    public void testSelfSignedCert() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore.load(new FileInputStream(new File("target/test-classes/client.jks")), "password".toCharArray());
+
+        Certificate certificate = keyStore.getCertificate("client");
+
+        CertInterceptor interceptor = new CertInterceptor(null);
+
+        Assert.assertTrue(interceptor.isSelfSigned((X509Certificate) certificate));
     }
 
 }
