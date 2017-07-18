@@ -1,5 +1,7 @@
 package com.synaltic.cxf.cert;
 
+import org.apache.cxf.Bus;
+import org.apache.cxf.bus.CXFBusFactory;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,6 +70,29 @@ public class CertInterceptorTest {
         CertInterceptor interceptor = new CertInterceptor(null);
 
         Assert.assertTrue(interceptor.isSelfSigned((X509Certificate) certificate));
+    }
+
+    @Test
+    public void testClientCertRetrieval() throws Exception {
+        Bus testBus = CXFBusFactory.newInstance().createBus();
+
+        Dictionary<String, Object> properties = new Hashtable<String, Object>();
+        properties.put(".*.enabled", "true");
+        properties.put(".*.keystore.path", "target/test-classes/keystore.jks");
+        properties.put(".*.keystore.password", "password");
+        Configuration configuration = EasyMock.mock(Configuration.class);
+        EasyMock.expect(configuration.getProperties()).andReturn(properties).anyTimes();
+        EasyMock.replay(configuration);
+
+        ConfigurationAdmin configurationAdmin = EasyMock.mock(ConfigurationAdmin.class);
+        EasyMock.expect(configurationAdmin.getConfiguration("com.synaltic.cxf.cert")).andReturn(configuration).anyTimes();
+        EasyMock.replay(configurationAdmin);
+
+        CertInterceptor interceptor = new CertInterceptor(configurationAdmin);
+
+        testBus.getInInterceptors().add(interceptor);
+
+
     }
 
 }

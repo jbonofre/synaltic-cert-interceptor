@@ -56,7 +56,7 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
         LOG.debug("Get the peer certificates from the TLS session info");
         Certificate[] certificates = null;
         try {
-            certificates = tlsSession.getSSLSession().getPeerCertificates();
+            certificates = tlsSession.getPeerCertificates();
         } catch (Exception e) {
             LOG.error("Can't get client cert", e);
             throw new SecurityException("Can't get client cert", e);
