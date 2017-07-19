@@ -41,14 +41,11 @@ If not, a `SecurityException` is thrown.
 
 If yes, the request reaches the CXF service.
 
-WARNING: in order to retrieve the client cert, you have to enable client authentication on the Pax Web side. Edit `etc/org.ops4j.pax.web.cfg` and define:
+### Requirements
+
+In order to retrieve the client cert, you have to enable client authentication on the Pax Web side. Edit `etc/org.ops4j.pax.web.cfg` and define:
+
 
 ```
 org.ops4j.pax.web.ssl.clientauthwanted=true
-```
-
-or
-
-```
-org.ops4j.pax.web.ssl.clientauthneeded=true
 ```

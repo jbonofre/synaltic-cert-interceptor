@@ -1,13 +1,10 @@
 package com.synaltic.cxf.cert;
 
-import org.apache.cxf.Bus;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
 import org.apache.cxf.security.transport.TLSSessionInfo;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
@@ -31,7 +28,7 @@ public class CertInterceptor extends AbstractPhaseInterceptor<Message> {
     private final ConfigurationAdmin configurationAdmin;
 
     public CertInterceptor(ConfigurationAdmin configurationAdmin) {
-        this(Phase.UNMARSHAL, configurationAdmin);
+        this(Phase.PRE_STREAM, configurationAdmin);
     }
 
     public CertInterceptor(String phase, ConfigurationAdmin configurationAdmin) {
