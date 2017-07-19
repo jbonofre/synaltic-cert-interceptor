@@ -43,9 +43,37 @@ If yes, the request reaches the CXF service.
 
 ### Requirements
 
-In order to retrieve the client cert, you have to enable client authentication on the Pax Web side. Edit `etc/org.ops4j.pax.web.cfg` and define:
+The first thing to do is to create a client certificate in a client keystore:
+
+```
+keytool -keygen -keyalg RSA -alias client -keysize 2048 -validity 365 -keystore client.jks
+```
+
+Then, you can export just the certificate:
+
+```
+keytool -export -rfc -alias client -file client.cert -keystore client.jks
+```
+
+Now, we create a keystore to trust the client certificate:
+
+```
+keytool -import -trustcacerts -alias client -file client.cer -keystore truststore.jks
+```
+
+In order to retrieve the client cert, you have to enable client authentication on the Pax Web side using the trust store. Edit `etc/org.ops4j.pax.web.cfg` and define:
 
 
 ```
 org.ops4j.pax.web.ssl.clientauthwanted=true
+org.ops4j.pax.web.ssl.truststore=/path/to/truststore.jks
+org.ops4j.pax.web.ssl.trustsore.password=password
 ```
+
+NB: if you want to use the client certificate in Chrome or Firefox, you have to convert the JKS keystore to PKCS12 keystore:
+
+```
+keytool -importkeystore -srckeystore client.jks -srcstoretype JKS -destkeystore client.pfx -deststoretype PKCS12
+```
+
+You can import the PKCS12 keystore in Chrome or Firefox and access to the service. Then, the browser will display a popup allowing you to choose the certificate.
